@@ -1,0 +1,105 @@
+#include <SoftwareSerial.h>
+#include <LiquidCrystal.h>
+#include<Wire.h> 
+#define MQ3pin A0
+#define buzzerPin 12
+#define Red_led 11
+#define Green_led 13
+#define RP1 10
+
+
+SoftwareSerial mySerial(2,3);
+const int rs=4,en=5,D4=6,D5=7,D6=8,D7=9;
+void sendSMS(const char* num, const char* msg);
+void makeCall(const char* num);
+LiquidCrystal lcd(rs,en,D4,D5,D6,D7); 
+
+void setup() 
+{ 
+  lcd.begin(16,2);
+   lcd.setCursor(2,0);
+  lcd.print( "GAS LEAKAGE");
+  lcd.setCursor(0,1);
+  lcd.print( "DETECTION SYSTEM");
+  delay(5000);
+  lcd.clear();
+  Serial.begin(9600);
+  mySerial.begin(9600);
+  pinMode(MQ3pin,INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(Red_led, OUTPUT);
+  pinMode(Green_led, OUTPUT);
+  pinMode(RP1,OUTPUT);
+}
+
+void loop()
+{
+  int sensorValue;  
+  sensorValue = analogRead(MQ3pin); 
+  Serial.print("Sensor Value: ");
+  Serial.println(sensorValue);
+  
+
+ if (sensorValue >= 600)
+{ 
+  
+  digitalWrite(buzzerPin, HIGH); 
+  delay(1000);
+  digitalWrite(Red_led, HIGH);
+  digitalWrite(Green_led,LOW); 
+  delay(1000);
+  digitalWrite(RP1,HIGH);
+  lcd.setCursor(0,0);
+  lcd.print( "gas leaking");
+  lcd.setCursor(0,1);
+  lcd.print( "fan is on");
+  delay(4000);
+  lcd.clear();
+  sendSMS("+918248678468", "gas leaking");
+  delay(5000); 
+  makeCall("+918248678468"); 
+  delay(5000); 
+ }  
+else
+ {
+   digitalWrite(buzzerPin, LOW); 
+  delay(1000);
+  digitalWrite(Red_led, LOW);
+  digitalWrite(Green_led,HIGH); 
+  delay(1000);
+  digitalWrite(RP1,LOW);
+  lcd.setCursor(0,0);
+  lcd.print( "gas not leaking");
+  lcd.setCursor(0,1);
+  lcd.print( "fan is off");
+  delay(4000);
+  lcd.clear();
+ }
+}
+void sendSMS(const char* num, const char* msg) 
+{
+  mySerial.println("AT"); 
+  delay(1000);
+  mySerial.println("ATE0"); 
+  delay(1000);
+  mySerial.println("AT+CMGF=1");
+  delay(1000);
+  mySerial.print("AT+CMGS=\"");
+  mySerial.print(num);
+  mySerial.println("\"");
+  delay(1000);
+  mySerial.print(msg);
+  delay(100);
+  mySerial.write(26);
+  delay(5000); 
+}
+
+void makeCall(const char* num) 
+{
+  mySerial.print("ATD");
+  mySerial.print(num);
+  mySerial.println(";"); 
+  delay(10000); 
+  mySerial.println("ATH"); 
+  delay(1000);
+}
